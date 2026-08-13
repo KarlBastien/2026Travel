@@ -50,22 +50,22 @@
             }
         });
 
-        // Tab Switching Logic
+        // Accordion Tab Switching Logic
         window.switchTab = function(city) {
             ['nyc', 'las', 'lax'].forEach(c => {
                 const section = document.getElementById(`section-${c}`);
                 const btn = document.getElementById(`tab-${c}`);
                 if (c === city) {
                     section.classList.remove('hidden');
-                    btn.className = "flex-1 py-3 px-4 text-center font-bold text-sm bg-brand-600 text-white rounded-xl shadow-sm transition";
+                    btn.className = "flex-1 py-3 px-3 text-center font-bold text-xs sm:text-sm bg-brand-600 text-white rounded-xl shadow-md transition-all duration-300 flex items-center justify-center gap-1.5";
                 } else {
                     section.classList.add('hidden');
-                    btn.className = "flex-1 py-3 px-4 text-center font-bold text-sm bg-white text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition";
+                    btn.className = "flex-1 py-3 px-3 text-center font-bold text-xs sm:text-sm bg-white text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-all duration-300 flex items-center justify-center gap-1.5";
                 }
             });
         };
 
-        // Backoffice Authentication check for Malena or Wesley
+        // Backoffice Authentication for Malena or Wesley
         window.verifyUser = function() {
             const nameInput = document.getElementById('user-name-input').value.trim().toLowerCase();
             const errorMsg = document.getElementById('auth-error');
@@ -88,13 +88,14 @@
             container.classList.toggle('hidden');
             if (container.classList.contains('hidden')) {
                 icon.className = "fa-solid fa-lock";
-                btnText.innerText = "Backoffice (Malena & Wesley)";
+                btnText.innerText = "Backoffice";
             } else {
                 icon.className = "fa-solid fa-lock-open text-brand-600";
                 btnText.innerText = "Close Backoffice";
             }
         };
 
+        // Image compression & Upload
         window.savePhoto = async function() {
             const titleInput = document.getElementById('photo-title');
             const cityInput = document.getElementById('photo-city');
@@ -106,7 +107,7 @@
                 return;
             }
 
-            saveBtn.innerText = "Uploading...";
+            saveBtn.innerText = "Compressing & Uploading...";
             saveBtn.disabled = true;
 
             const file = fileInput.files[0];
@@ -119,8 +120,8 @@
                     img.onload = async function() {
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
-                        const MAX_WIDTH = 800;
-                        const MAX_HEIGHT = 800;
+                        const MAX_WIDTH = 600;
+                        const MAX_HEIGHT = 600;
                         let width = img.width;
                         let height = img.height;
 
@@ -133,7 +134,7 @@
                         canvas.width = width;
                         canvas.height = height;
                         ctx.drawImage(img, 0, 0, width, height);
-                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
 
                         const galleryColRef = collection(db, 'artifacts', appId, 'public', 'data', 'trip_gallery');
                         await addDoc(galleryColRef, {
@@ -181,7 +182,7 @@
                         grid.innerHTML = `
                             <div class="col-span-full text-center py-6 text-slate-400 text-xs border border-dashed border-slate-200 rounded-xl">
                                 <i class="fa-regular fa-images text-xl mb-1"></i>
-                                <p>No photos uploaded for this city yet.</p>
+                                <p>No photos uploaded yet.</p>
                             </div>
                         `;
                         return;
@@ -190,13 +191,13 @@
                     grid.innerHTML = '';
                     cityPhotos.forEach((item) => {
                         const card = document.createElement('div');
-                        card.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between relative group";
+                        card.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between";
                         card.innerHTML = `
-                            <div class="h-40 overflow-hidden bg-slate-100 relative">
+                            <div class="h-36 overflow-hidden bg-slate-100 relative">
                                 <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover">
                                 <span class="absolute top-2 right-2 bg-slate-900/70 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">${item.city}</span>
                             </div>
-                            <div class="p-2.5 flex items-center justify-between">
+                            <div class="p-2 flex items-center justify-between">
                                 <div class="truncate">
                                     <h4 class="font-bold text-slate-800 text-xs truncate">${item.title}</h4>
                                     <span class="text-[9px] text-slate-400">${item.date}</span>
@@ -215,7 +216,7 @@
         }
 
         window.deletePhoto = async function(id) {
-            if (confirm('Are you sure you want to delete this photo?')) {
+            if (confirm('Delete this photo?')) {
                 try {
                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'trip_gallery', id);
                     await deleteDoc(docRef);
@@ -224,6 +225,30 @@
                 }
             }
         };
+
+        // Checkbox State Storage Handler
+        document.addEventListener('DOMContentLoaded', () => {
+            const checkboxes = document.querySelectorAll('.task-checkbox');
+            checkboxes.forEach((checkbox) => {
+                const id = checkbox.getAttribute('data-id');
+                const savedState = localStorage.getItem('trip_task_' + id);
+                const textSpan = checkbox.nextElementSibling;
+
+                if (savedState === 'true') {
+                    checkbox.checked = true;
+                    if (textSpan) textSpan.classList.add('line-through', 'text-slate-400');
+                }
+
+                checkbox.addEventListener('change', () => {
+                    localStorage.setItem('trip_task_' + id, checkbox.checked);
+                    if (checkbox.checked) {
+                        if (textSpan) textSpan.classList.add('line-through', 'text-slate-400');
+                    } else {
+                        if (textSpan) textSpan.classList.remove('line-through', 'text-slate-400');
+                    }
+                });
+            });
+        });
     </script>
 
     <script>
@@ -248,149 +273,142 @@
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
 
     <!-- Header / Hero Section -->
-    <header class="bg-gradient-to-r from-slate-900 via-brand-900 to-slate-900 text-white shadow-xl relative overflow-hidden">
-        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
-        <div class="max-w-4xl mx-auto px-4 py-8 relative z-10 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-4">
+    <header class="bg-gradient-to-r from-slate-900 via-brand-900 to-slate-900 text-white shadow-md relative overflow-hidden">
+        <div class="max-w-3xl mx-auto px-4 py-6 relative z-10 flex justify-between items-center gap-3">
             <div>
-                <span class="bg-brand-500/20 text-brand-300 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-widest border border-brand-500/30">August 2026 Epic Trip[span_0](start_span)[span_0](end_span)</span>
-                <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-2 text-transparent bg-clip-text bg-gradient-to-r from-white via-sky-100 to-sky-300">
-                    Male & Wes US 2026[span_1](start_span)[span_1](end_span)
+                <span class="bg-brand-500/20 text-brand-300 text-[10px] font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-brand-500/30">US 2026</span>
+                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1 text-white">
+                    Male & Wes[span_0](start_span)[span_0](end_span)
                 </h1>
-                <p class="text-slate-300 mt-1 text-xs sm:text-sm">
-                    New York City • Las Vegas • Los Angeles[span_2](start_span)[span_2](end_span)
-                </p>
             </div>
             <!-- Backoffice Trigger Button -->
-            <button onclick="toggleBackoffice()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2">
-                <i class="fa-solid fa-lock" id="bo-icon"></i> <span id="bo-btn-text">Backoffice (Malena & Wesley)</span>
+            <button onclick="toggleBackoffice()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition shadow-sm flex items-center gap-1.5 shrink-0">
+                <i class="fa-solid fa-lock" id="bo-icon"></i> <span id="bo-btn-text">Backoffice</span>
             </button>
         </div>
     </header>
 
     <!-- Main Content Container -->
-    <main class="max-w-4xl mx-auto px-4 py-6 flex-grow w-full space-y-6">
+    <main class="max-w-3xl mx-auto px-3 py-4 flex-grow w-full space-y-4">
 
         <!-- RESTRICTED BACKOFFICE PANEL -->
-        <div id="backoffice-container" class="hidden bg-white rounded-2xl shadow-md border border-brand-200 p-5 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <i class="fa-solid fa-shield-halved text-brand-600"></i> Authorized Backoffice Access
+        <div id="backoffice-container" class="hidden bg-white rounded-2xl shadow-md border border-brand-200 p-4 space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved text-brand-600"></i> Authorized Access (Malena & Wesley)
                 </h3>
-                <span class="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-medium">Restricted to Malena & Wesley</span>
             </div>
 
-            <!-- Name Verification Step -->
-            <div id="auth-container" class="space-y-3">
-                <p class="text-xs text-slate-600">Please enter your authorized name to upload pictures:</p>
+            <div id="auth-container" class="space-y-2">
+                <p class="text-[11px] text-slate-600">Enter your name to unlock photo uploads:</p>
                 <div class="flex gap-2">
-                    <input type="text" id="user-name-input" placeholder="Enter your name (e.g. Malena)" class="text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 flex-1 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <button onclick="verifyUser()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition">Verify</button>
+                    <input type="text" id="user-name-input" placeholder="Name (Malena / Wesley)" class="text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 flex-1 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <button onclick="verifyUser()" class="bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-lg">Verify</button>
                 </div>
-                <p id="auth-error" class="text-[11px] text-red-500 hidden font-medium">Access denied. Only Malena and Wesley can upload photos.</p>
+                <p id="auth-error" class="text-[10px] text-red-500 hidden font-medium">Access denied. Only Malena & Wesley can upload.</p>
             </div>
 
-            <!-- Actual Upload Form (Unlocked after verification) -->
-            <div id="backoffice-upload-form" class="hidden space-y-3 pt-2">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div id="backoffice-upload-form" class="hidden space-y-2.5 pt-1">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <input type="text" id="photo-title" placeholder="Caption (e.g., Central Park)" class="text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500">
                     <select id="photo-city" class="text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500">
                         <option value="nyc">New York City</option>
                         <option value="las">Las Vegas</option>
                         <option value="lax">Los Angeles</option>
                     </select>
-                    <input type="file" id="photo-file" accept="image/*" class="text-[11px] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-brand-50 file:text-brand-700 text-slate-500">
+                    <input type="file" id="photo-file" accept="image/*" class="text-[10px] file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-brand-50 file:text-brand-700 text-slate-500">
                 </div>
                 <div class="flex justify-end">
-                    <button onclick="savePhoto()" id="save-photo-btn" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition shadow-sm">
+                    <button onclick="savePhoto()" id="save-photo-btn" class="bg-brand-600 text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-sm">
                         Save to Gallery
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- ACCORDION CITY TABS -->
-        <div class="flex rounded-xl bg-slate-200 p-1 gap-1">
-            <button onclick="switchTab('nyc')" id="tab-nyc" class="flex-1 py-3 px-4 text-center font-bold text-sm bg-brand-600 text-white rounded-xl shadow-sm transition">
-                <i class="fa-solid fa-city mr-1.5"></i> New York City
+        <!-- ACCORDION TABS -->
+        <div class="flex rounded-xl bg-slate-200 p-1 gap-1 shadow-inner">
+            <button onclick="switchTab('nyc')" id="tab-nyc" class="flex-1 py-3 px-3 text-center font-bold text-xs sm:text-sm bg-brand-600 text-white rounded-xl shadow-md transition-all duration-300 flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-city"></i> New York
             </button>
-            <button onclick="switchTab('las')" id="tab-las" class="flex-1 py-3 px-4 text-center font-bold text-sm bg-white text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition">
-                <i class="fa-solid fa-dice mr-1.5"></i> Las Vegas
+            <button onclick="switchTab('las')" id="tab-las" class="flex-1 py-3 px-3 text-center font-bold text-xs sm:text-sm bg-white text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-all duration-300 flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-dice"></i> Las Vegas
             </button>
-            <button onclick="switchTab('lax')" id="tab-lax" class="flex-1 py-3 px-4 text-center font-bold text-sm bg-white text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition">
-                <i class="fa-solid fa-film mr-1.5"></i> Los Angeles
+            <button onclick="switchTab('lax')" id="tab-lax" class="flex-1 py-3 px-3 text-center font-bold text-xs sm:text-sm bg-white text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-all duration-300 flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-film"></i> Los Angeles
             </button>
         </div>
 
         <!-- ==================== NYC TAB CONTENT ==================== -->
-        <div id="section-nyc" class="space-y-6">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-                <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <span class="w-7 h-7 rounded-lg bg-brand-500 text-white flex items-center justify-center text-xs font-bold">NYC</span>
+        <div id="section-nyc" class="space-y-4 transition-all duration-300">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+                <div class="border-b border-slate-100 pb-2.5 flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded bg-brand-500 text-white flex items-center justify-center text-[10px] font-bold">NYC</span>
                         New York Itinerary & Hotel
                     </h2>
-                    <span class="text-xs text-slate-500 font-medium">Times Square West Hotel[span_3](start_span)[span_3](end_span)</span>
+                    <span class="text-[11px] text-slate-500 font-medium">Times Square West Hotel[span_1](start_span)[span_1](end_span)</span>
                 </div>
 
-                <div class="space-y-3 text-xs sm:text-sm text-slate-700">
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <strong class="text-brand-600">Thu, Aug 13: Arrival & Check-in[span_4](start_span)[span_4](end_span)</strong>
-                        <ul class="mt-1.5 space-y-1 pl-4 list-disc text-slate-600">
-                            <li>BUE ➔ PUJ (Arajet DM 6267 @ 07:45 - 14:55) | PUJ ➔ EWR (Arajet DM 5382 @ 19:10 - 23:30)[span_5](start_span)[span_5](end_span)</li>
-                            <li>Check-in: Times Square West Hotel[span_6](start_span)[span_6](end_span)</li>
+                <div class="space-y-2.5 text-xs text-slate-700">
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <strong class="text-brand-600">Thu, Aug 13: Arrival & Check-in[span_2](start_span)[span_2](end_span)</strong>
+                        <ul class="mt-1 space-y-1.5 pl-2 list-none">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-1"> <span>BUE ➔ PUJ (Arajet DM 6267 @ 07:45 - 14:55) | PUJ ➔ EWR (Arajet DM 5382 @ 19:10 - 23:30)[span_3](start_span)[span_3](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-2"> <span>Check-in: Times Square West Hotel[span_4](start_span)[span_4](end_span)</span></li>
                         </ul>
                     </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <strong class="text-brand-600">Fri, Aug 14: Museum & Parks[span_7](start_span)[span_7](end_span)</strong>
-                        <ul class="mt-1.5 space-y-1 pl-4 list-disc text-slate-600">
-                            <li>Central Park: the pond, the mall, bethesda, bow bridge[span_8](start_span)[span_8](end_span)</li>
-                            <li>American Museum of Natural History Free admission @ 16:30hs[span_9](start_span)[span_9](end_span)</li>
-                            <li>Fifth Avenue & Whitney Museum @ 19:30hs • Levain bakery[span_10](start_span)[span_10](end_span)</li>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <strong class="text-brand-600">Fri, Aug 14: Museum & Parks[span_5](start_span)[span_5](end_span)</strong>
+                        <ul class="mt-1 space-y-1.5 pl-2 list-none">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-3"> <span>Central Park: the pond, the mall, bethesda, bow bridge[span_6](start_span)[span_6](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-4"> <span>American Museum of Natural History Free admission @ 16:30hs[span_7](start_span)[span_7](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-5"> <span>Fifth Avenue & Whitney Museum @ 19:30hs • Levain bakery[span_8](start_span)[span_8](end_span)</span></li>
                         </ul>
                     </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <strong class="text-brand-600">Sat, Aug 15: Downtown & Markets[span_11](start_span)[span_11](end_span)</strong>
-                        <ul class="mt-1.5 space-y-1 pl-4 list-disc text-slate-600">
-                            <li>Brooklyn Bridge & Dumbo - Flea market (10:00 to 17:00hs)[span_12](start_span)[span_12](end_span)</li>
-                            <li>Wall street - Charging bull - Staten Island - One world trade[span_13](start_span)[span_13](end_span)</li>
-                            <li>NY Summer street • Lafayette[span_14](start_span)[span_14](end_span)</li>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <strong class="text-brand-600">Sat, Aug 15: Downtown & Markets[span_9](start_span)[span_9](end_span)</strong>
+                        <ul class="mt-1 space-y-1.5 pl-2 list-none">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-6"> <span>Brooklyn Bridge & Dumbo - Flea market (10:00 to 17:00hs)[span_10](start_span)[span_10](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-7"> <span>Wall street - Charging bull - Staten Island - One world trade[span_11](start_span)[span_11](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-8"> <span>NY Summer street • Lafayette[span_12](start_span)[span_12](end_span)</span></li>
                         </ul>
                     </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <strong class="text-brand-600">Sun, Aug 16: Icons & Parade[span_15](start_span)[span_15](end_span)</strong>
-                        <ul class="mt-1.5 space-y-1 pl-4 list-disc text-slate-600">
-                            <li>Times Square - Rockefeller - Grand central terminal - NY public library[span_16](start_span)[span_16](end_span)</li>
-                            <li>India day parade 12:00 hs • Summit One Experience 16:00 hs[span_17](start_span)[span_17](end_span)</li>
-                            <li>Magnolia Bakery - Lexington Candy[span_18](start_span)[span_18](end_span)</li>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <strong class="text-brand-600">Sun, Aug 16: Icons & Parade[span_13](start_span)[span_13](end_span)</strong>
+                        <ul class="mt-1 space-y-1.5 pl-2 list-none">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-9"> <span>Times Square - Rockefeller - Grand central terminal - NY public library[span_14](start_span)[span_14](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-10"> <span>India day parade 12:00 hs • Summit One Experience 16:00 hs[span_15](start_span)[span_15](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-11"> <span>Magnolia Bakery - Lexington Candy[span_16](start_span)[span_16](end_span)</span></li>
                         </ul>
                     </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <strong class="text-brand-600">Mon, Aug 17: Tonight Show & Memorial[span_19](start_span)[span_19](end_span)</strong>
-                        <ul class="mt-1.5 space-y-1 pl-4 list-disc text-slate-600">
-                            <li>One Manhattan West - visit 10:30 am - 12:00 pm • The vessel / Madison Square garden[span_20](start_span)[span_20](end_span)</li>
-                            <li>Jimmy Fallon 15:30/18:30hs[span_21](start_span)[span_21](end_span)</li>
-                            <li>9/11 Memorial museum Free admission 17:30 / 19hs • Bryant park movie 20:00 hs[span_22](start_span)[span_22](end_span)</li>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <strong class="text-brand-600">Mon, Aug 17: Tonight Show & Memorial[span_17](start_span)[span_17](end_span)</strong>
+                        <ul class="mt-1 space-y-1.5 pl-2 list-none">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-12"> <span>One Manhattan West visit 10:30 am • The vessel / Madison Square garden[span_18](start_span)[span_18](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-13"> <span>Jimmy Fallon 15:30/18:30hs[span_19](start_span)[span_19](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-14"> <span>9/11 Memorial museum Free admission 17:30 / 19hs • Bryant park movie 20:00 hs[span_20](start_span)[span_20](end_span)</span></li>
                         </ul>
                     </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <strong class="text-brand-600">Tue, Aug 18: Flight to Las Vegas[span_23](start_span)[span_23](end_span)</strong>
-                        <ul class="mt-1.5 space-y-1 pl-4 list-disc text-slate-600">
-                            <li>JFK - LAS DELTA DL807 @ 12:05-14:53[span_24](start_span)[span_24](end_span)</li>
-                            <li>Check in: Flamingo Las Vegas 3555 Las Vegas Blvd (Lyft $27)[span_25](start_span)[span_25](end_span)</li>
-                            <li>Strip Las Vegas • Bellagio Show from 19hs • Paris Las Vegas / Caesars Palace[span_26](start_span)[span_26](end_span)</li>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <strong class="text-brand-600">Tue, Aug 18: Flight to Las Vegas[span_21](start_span)[span_21](end_span)</strong>
+                        <ul class="mt-1 space-y-1.5 pl-2 list-none">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-15"> <span>JFK - LAS DELTA DL807 @ 12:05-14:53[span_22](start_span)[span_22](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-16"> <span>Check in: Flamingo Las Vegas 3555 Las Vegas Blvd (Lyft $27)[span_23](start_span)[span_23](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="nyc-17"> <span>Strip Las Vegas • Bellagio Show from 19hs • Paris Las Vegas / Caesars Palace[span_24](start_span)[span_24](end_span)</span></li>
                         </ul>
                     </div>
                 </div>
             </div>
 
             <!-- NYC City Gallery -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+                <h3 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                     <i class="fa-solid fa-camera text-brand-600"></i> New York Gallery (Latest First)
                 </h3>
-                <div id="gallery-grid-nyc" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <div id="gallery-grid-nyc" class="grid grid-cols-2 gap-2">
                     <div class="col-span-full text-center py-6 text-slate-400 text-xs">
-                        <i class="fa-solid fa-spinner fa-spin text-lg mb-1 text-brand-500"></i>
+                        <i class="fa-solid fa-spinner fa-spin text-base mb-1 text-brand-500"></i>
                         <p>Loading gallery...</p>
                     </div>
                 </div>
@@ -398,43 +416,43 @@
         </div>
 
         <!-- ==================== LAS VEGAS TAB CONTENT ==================== -->
-        <div id="section-las" class="space-y-6 hidden">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-                <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <span class="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center text-xs font-bold">LAS</span>
+        <div id="section-las" class="space-y-4 transition-all duration-300 hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+                <div class="border-b border-slate-100 pb-2.5 flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded bg-amber-500 text-white flex items-center justify-center text-[10px] font-bold">LAS</span>
                         Las Vegas Itinerary & Hotel
                     </h2>
-                    <span class="text-xs text-slate-500 font-medium">Flamingo Las Vegas[span_27](start_span)[span_27](end_span)</span>
+                    <span class="text-[11px] text-slate-500 font-medium">Flamingo Las Vegas[span_25](start_span)[span_25](end_span)</span>
                 </div>
 
-                <div class="space-y-3 text-xs sm:text-sm text-slate-700">
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <strong class="text-amber-600">Wed, Aug 19: Casinos & High Roller[span_28](start_span)[span_28](end_span)</strong>
-                        <ul class="mt-1.5 space-y-1 pl-4 list-disc text-slate-600">
-                            <li>Welcome to Fabulous Las Vegas sign[span_29](start_span)[span_29](end_span)</li>
-                            <li>Venetian, Caesars, Bellagio tours • Piscina Flamingo[span_30](start_span)[span_30](end_span)</li>
-                            <li>High roller • Strip[span_31](start_span)[span_31](end_span)</li>
+                <div class="space-y-2.5 text-xs text-slate-700">
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <strong class="text-amber-600">Wed, Aug 19: Casinos & High Roller[span_26](start_span)[span_26](end_span)</strong>
+                        <ul class="mt-1 space-y-1.5 pl-2 list-none">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="las-1"> <span>Welcome to Fabulous Las Vegas sign[span_27](start_span)[span_27](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="las-2"> <span>Venetian, Caesars, Bellagio tours • Piscina Flamingo[span_28](start_span)[span_28](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="las-3"> <span>High roller • Strip[span_29](start_span)[span_29](end_span)</span></li>
                         </ul>
                     </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <strong class="text-amber-600">Thu, Aug 20: Shopping & Backstreet Boys[span_32](start_span)[span_32](end_span)</strong>
-                        <ul class="mt-1.5 space-y-1 pl-4 list-disc text-slate-600">
-                            <li>Free time / Shopping[span_33](start_span)[span_33](end_span)</li>
-                            <li>Backstreet Boys: Millennium @ The Sphere - 20:00 hs[span_34](start_span)[span_34](end_span)</li>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <strong class="text-amber-600">Thu, Aug 20: Shopping & Backstreet Boys[span_30](start_span)[span_30](end_span)</strong>
+                        <ul class="mt-1 space-y-1.5 pl-2 list-none">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="las-4"> <span>Free time / Shopping[span_31](start_span)[span_31](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="las-5"> <span>Backstreet Boys: Millennium @ The Sphere - 20:00 hs[span_32](start_span)[span_32](end_span)</span></li>
                         </ul>
                     </div>
                 </div>
             </div>
 
             <!-- LAS City Gallery -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+                <h3 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                     <i class="fa-solid fa-camera text-amber-500"></i> Las Vegas Gallery (Latest First)
                 </h3>
-                <div id="gallery-grid-las" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <div id="gallery-grid-las" class="grid grid-cols-2 gap-2">
                     <div class="col-span-full text-center py-6 text-slate-400 text-xs">
-                        <i class="fa-solid fa-spinner fa-spin text-lg mb-1 text-amber-500"></i>
+                        <i class="fa-solid fa-spinner fa-spin text-base mb-1 text-amber-500"></i>
                         <p>Loading gallery...</p>
                     </div>
                 </div>
@@ -442,57 +460,57 @@
         </div>
 
         <!-- ==================== LOS ANGELES TAB CONTENT ==================== -->
-        <div id="section-lax" class="space-y-6 hidden">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-                <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <span class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">LAX</span>
+        <div id="section-lax" class="space-y-4 transition-all duration-300 hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+                <div class="border-b border-slate-100 pb-2.5 flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">LAX</span>
                         Los Angeles Itinerary & Hotel
                     </h2>
-                    <span class="text-xs text-slate-500 font-medium">KASA Sunset Los Angeles[span_35](start_span)[span_35](end_span)</span>
+                    <span class="text-[11px] text-slate-500 font-medium">KASA Sunset Los Angeles[span_33](start_span)[span_33](end_span)</span>
                 </div>
 
-                <div class="space-y-3 text-xs sm:text-sm text-slate-700">
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <strong class="text-emerald-600">Fri, Aug 21: Flight to LA & Observatory[span_36](start_span)[span_36](end_span)</strong>
-                        <ul class="mt-1.5 space-y-1 pl-4 list-disc text-slate-600">
-                            <li>LAS - LAX DELTA DL2678 @ 13:05-14:25[span_37](start_span)[span_37](end_span)</li>
-                            <li>Check in: KASA sunset Los Angeles (1615 N Western Ave, Lyft $56)[span_38](start_span)[span_38](end_span)</li>
-                            <li>Griffith Observatory (Lyft $10 / free admission) • Hollywood[span_39](start_span)[span_39](end_span)</li>
+                <div class="space-y-2.5 text-xs text-slate-700">
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <strong class="text-emerald-600">Fri, Aug 21: Flight to LA & Observatory[span_34](start_span)[span_34](end_span)</strong>
+                        <ul class="mt-1 space-y-1.5 pl-2 list-none">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="lax-1"> <span>LAS - LAX DELTA DL2678 @ 13:05-14:25[span_35](start_span)[span_35](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="lax-2"> <span>Check in: KASA sunset Los Angeles (1615 N Western Ave, Lyft $56)[span_36](start_span)[span_36](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="lax-3"> <span>Griffith Observatory (Lyft $10 / free admission) • Hollywood[span_37](start_span)[span_37](end_span)</span></li>
                         </ul>
                     </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <strong class="text-emerald-600">Sat, Aug 22: Beaches & Beverly Hills[span_40](start_span)[span_40](end_span)</strong>
-                        <ul class="mt-1.5 space-y-1 pl-4 list-disc text-slate-600">
-                            <li>Walk of fame[span_41](start_span)[span_41](end_span)</li>
-                            <li>Beverly Hills: rodeo drive (Lyft $20)[span_42](start_span)[span_42](end_span)</li>
-                            <li>Santa Monica / Venice Beach (Lyft $15 / return to hotel $30 aprox)[span_43](start_span)[span_43](end_span)</li>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <strong class="text-emerald-600">Sat, Aug 22: Beaches & Beverly Hills[span_38](start_span)[span_38](end_span)</strong>
+                        <ul class="mt-1 space-y-1.5 pl-2 list-none">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="lax-4"> <span>Walk of fame[span_39](start_span)[span_39](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="lax-5"> <span>Beverly Hills: rodeo drive (Lyft $20)[span_40](start_span)[span_40](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="lax-6"> <span>Santa Monica / Venice Beach (Lyft $15 / return to hotel $30 aprox)[span_41](start_span)[span_41](end_span)</span></li>
                         </ul>
                     </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <strong class="text-emerald-600">Sun, Aug 23: Universal Studios[span_44](start_span)[span_44](end_span)</strong>
-                        <ul class="mt-1.5 space-y-1 pl-4 list-disc text-slate-600">
-                            <li>Universal Studios (Lyft $10)[span_45](start_span)[span_45](end_span)</li>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <strong class="text-emerald-600">Sun, Aug 23: Universal Studios[span_42](start_span)[span_42](end_span)</strong>
+                        <ul class="mt-1 space-y-1 pl-2 list-none">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="lax-7"> <span>Universal Studios (Lyft $10)[span_43](start_span)[span_43](end_span)</span></li>
                         </ul>
                     </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <strong class="text-emerald-600">Mon, Aug 24 - Tue, Aug 25: Return Home[span_46](start_span)[span_46](end_span)</strong>
-                        <ul class="mt-1.5 space-y-1 pl-4 list-disc text-slate-600">
-                            <li>LAX - EZE: LATAM LA603 LAX-SCL 03:55 PM | LA542 SCL-EZE 25.08 08:30 AM / 11:30 AM[span_47](start_span)[span_47](end_span)</li>
-                            <li>TIENDA LEON EZE 14:30[span_48](start_span)[span_48](end_span)</li>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <strong class="text-emerald-600">Mon, Aug 24 - Tue, Aug 25: Return Home[span_44](start_span)[span_44](end_span)</strong>
+                        <ul class="mt-1 space-y-1 pl-2 list-none">
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="lax-8"> <span>LAX - EZE: LATAM LA603 LAX-SCL 03:55 PM | LA542 SCL-EZE 25.08[span_45](start_span)[span_45](end_span)</span></li>
+                            <li class="flex items-start gap-2"><input type="checkbox" class="task-checkbox mt-0.5" data-id="lax-9"> <span>TIENDA LEON EZE 14:30[span_46](start_span)[span_46](end_span)</span></li>
                         </ul>
                     </div>
                 </div>
             </div>
 
             <!-- LAX City Gallery -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+                <h3 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                     <i class="fa-solid fa-camera text-emerald-600"></i> Los Angeles Gallery (Latest First)
                 </h3>
-                <div id="gallery-grid-lax" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <div id="gallery-grid-lax" class="grid grid-cols-2 gap-2">
                     <div class="col-span-full text-center py-6 text-slate-400 text-xs">
-                        <i class="fa-solid fa-spinner fa-spin text-lg mb-1 text-emerald-600"></i>
+                        <i class="fa-solid fa-spinner fa-spin text-base mb-1 text-emerald-600"></i>
                         <p>Loading gallery...</p>
                     </div>
                 </div>
@@ -502,8 +520,8 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-900 text-slate-400 py-6 mt-12 text-center text-xs border-t border-slate-800">
-        <p>Male & Wes US 2026 Itinerary Planner</p><p>Designed with ❤️[span_49](start_span)[span_49](end_span).</p>
+    <footer class="bg-slate-900 text-slate-400 py-4 mt-8 text-center text-[11px] border-t border-slate-800">
+        <p>Male & Wes US 2026 Itinerary • Designed with ❤️[span_47](start_span)[span_47](end_span).</p>
     </footer>
 
 </body>
