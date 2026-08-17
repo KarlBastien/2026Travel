@@ -10,6 +10,9 @@
     <style>
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Oculta los botones de admin por defecto, los muestra solo si la clase is-admin está activa */
+        body:not(.is-admin) .admin-only { display: none !important; }
     </style>
 
     <!-- SDKs de Firebase -->
@@ -101,6 +104,9 @@
                 document.getElementById('auth-container').classList.add('hidden');
                 panel.classList.remove('hidden');
                 expensesPanel.classList.remove('hidden');
+                
+                // Activa el modo admin para mostrar los botones de borrar en las fotos
+                document.body.classList.add('is-admin');
             } else {
                 errorMsg.classList.remove('hidden');
             }
@@ -255,7 +261,6 @@
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
                         
-                        // Aumentamos la resolución máxima a 2500x2500 para conservar mucha más calidad
                         const MAX_WIDTH = 2500; const MAX_HEIGHT = 2500;
                         let width = img.width; let height = img.height;
 
@@ -265,7 +270,6 @@
                         canvas.width = width; canvas.height = height;
                         ctx.drawImage(img, 0, 0, width, height);
                         
-                        // Subimos la calidad del JPEG a 92% (es la tasa ideal para acercarse a los 2MB con fotos nítidas)
                         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
 
                         const galleryColRef = collection(db, 'trip_photos', cloudAppId, 'uploads');
@@ -313,6 +317,8 @@
                     cityPhotos.forEach((item) => {
                         const card = document.createElement('div');
                         card.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-md flex flex-col justify-between min-w-[75%] sm:min-w-[45%] md:min-w-[30%] flex-shrink-0 snap-center first:ml-4 last:mr-4";
+                        
+                        // Añadimos la clase 'admin-only' al botón de borrar
                         card.innerHTML = `
                             <div class="h-48 overflow-hidden bg-slate-100 relative cursor-pointer group" onclick="openModal('${item.image}')">
                                 <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
@@ -327,7 +333,7 @@
                                     <h4 class="font-bold text-slate-800 text-sm truncate">${item.title}</h4>
                                     <span class="text-[10px] text-slate-400">${item.date}</span>
                                 </div>
-                                <button onclick="deletePhoto('${item.id}')" class="text-slate-300 hover:text-red-500 transition text-sm p-1.5 bg-slate-50 rounded-full" title="Borrar foto"><i class="fa-solid fa-trash-can"></i></button>
+                                <button onclick="deletePhoto('${item.id}')" class="admin-only text-slate-300 hover:text-red-500 transition text-sm p-1.5 bg-slate-50 rounded-full" title="Borrar foto"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                         `;
                         carousel.appendChild(card);
@@ -337,6 +343,11 @@
         }
 
         window.deletePhoto = async function(id) {
+            // Doble chequeo de seguridad
+            if (!document.body.classList.contains('is-admin')) {
+                alert('Acceso denegado: Solo los administradores pueden borrar imágenes.');
+                return;
+            }
             if (confirm('¿Borrar esta foto de la nube?')) {
                 await deleteDoc(doc(db, 'trip_photos', cloudAppId, 'uploads', id));
             }
